@@ -1,6 +1,6 @@
 {
   "private": true,
-  "displayName": "Plugin Name",
+  "displayName": "Yeelight Bulb plugin",
   "name": "homebridge-plugin-name",
   "version": "1.0.0",
   "description": "A short description about what your plugin does.",
@@ -26,9 +26,8 @@
   "keywords": [
     "homebridge-plugin"
   ],
-  "dependencies": {},
   "devDependencies": {
-    "@types/node": "^16.10.9",
+    "@types/node": "^16.18.36",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "eslint": "^8.0.1",

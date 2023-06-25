@@ -1,15 +1,15 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "YeelightBulb",
   "pluginType": "platform",
   "singular": true,
   "schema": {
     "type": "object",
     "properties": {
       "name": {
-        "title": "Name",
+        "title": "Yeelight Bulb Plugin",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Yeelight Bulb"
       }
     }
   }
