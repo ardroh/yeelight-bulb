@@ -58,23 +58,31 @@ export class YeelightBulbPlatformAccessory {
     const ip = this.accessory.context.device.location.split('//')[1].split(':')[0];
     const port = this.accessory.context.device.location.split('//')[1].split(':')[1];
     const payload = `{"id":1,"method":"set_power","params":["${value ? 'on' : 'off'}","smooth",500]}\r\n`;
-    const client = new net.Socket();
-    client.connect(port, ip, () => {
-      this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
-      client.write(payload);
+    await new Promise((resolve, reject) => {
+      const client = new net.Socket();
+      client.connect(port, ip, () => {
+        this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
+        client.write(payload);
+      });
+      client.on('data', (data) => {
+        this.platform.log.info('Set status - Received: ' + data);
+        client.destroy(); // kill client after server's response
+        resolve('success');
+      });
+      client.on('error', (err) => {
+        this.platform.log.info('Set status - error: ' + err);
+        reject(err);
+      });
+      client.on('close', () => {
+        this.platform.log.info('Set status - connection closed');
+      });
+      setTimeout(() => {
+        if (!client.destroyed) {
+          client.destroy();
+        }
+        resolve('timeout');
+      }, 5000);
     });
-    client.on('data', (data) => {
-      this.platform.log.info('Set status - Received: ' + data);
-      client.destroy(); // kill client after server's response
-    });
-    client.on('close', () => {
-      this.platform.log.info('Set status - connection closed');
-    });
-    setTimeout(() => {
-      if (!client.destroyed) {
-        client.destroy();
-      }
-    }, 5000);
   }
 
   /**
@@ -114,6 +122,10 @@ export class YeelightBulbPlatformAccessory {
           resolve(isOn);
           this.platform.log.info('Yeelight Bulb is ' + isOn ? 'on' : 'off');
           client.destroy(); // kill client after server's response
+        });
+        client.on('error', (err) => {
+          this.platform.log.info('Check status - error: ' + err);
+          reject(err);
         });
         client.on('close', () => {
           this.platform.log.info('Check status - connection closed');
