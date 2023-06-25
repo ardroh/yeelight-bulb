@@ -1,7 +1,7 @@
 {
   "private": false,
-  "displayName": "Yeelight Bulb plugin",
-  "name": "yeelight-bulb-plugin",
+  "displayName": "Homebridge Yeelight Bulb plugin",
+  "name": "homebridge-yeelight-bulb-plugin",
   "version": "0.1.0",
   "description": "A Homebridge plugin to control Yeelight Bulbs.",
   "license": "Apache-2.0",
