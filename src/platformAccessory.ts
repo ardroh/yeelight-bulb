@@ -60,7 +60,7 @@ export class YeelightBulbPlatformAccessory {
     const payload = `{"id":1,"method":"set_power","params":["${value ? 'on' : 'off'}","smooth",500]}\r\n`;
     const client = new net.Socket();
     client.connect(port, ip, () => {
-      this.platform.log.info('Connected to Yeelight Bulb');
+      this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
       client.write(payload);
     });
     client.on('data', (data) => {
@@ -94,11 +94,12 @@ export class YeelightBulbPlatformAccessory {
     const client = new net.Socket();
     let isOn = false;
     client.connect(port, ip, () => {
+      this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
       client.write(payload);
     });
     //get response from yeelight
     client.on('data', (data) => {
-      this.platform.log.debug('Received: ' + data);
+      this.platform.log.info('Received: ' + data);
       const response = JSON.parse(data.toString());
       if (response.result) {
         isOn = response.result[0] === 'on';
