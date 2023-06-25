@@ -46,50 +46,6 @@ export class YeelightBulbPlatformAccessory {
     this.service.getCharacteristic(this.platform.Characteristic.On)
       .onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
       .onGet(this.getOn.bind(this));               // GET - bind to the `getOn` method below
-
-    // // register handlers for the Brightness Characteristic
-    // this.service.getCharacteristic(this.platform.Characteristic.Brightness)
-    //   .onSet(this.setBrightness.bind(this));       // SET - bind to the 'setBrightness` method below
-
-    /**
-     * Creating multiple services of the same type.
-     *
-     * To avoid "Cannot add a Service with the same UUID another Service without also defining a unique 'subtype' property." error,
-     * when creating multiple services of the same type, you need to use the following syntax to specify a name and subtype id:
-     * this.accessory.getService('NAME') || this.accessory.addService(this.platform.Service.Lightbulb, 'NAME', 'USER_DEFINED_SUBTYPE_ID');
-     *
-     * The USER_DEFINED_SUBTYPE must be unique to the platform accessory (if you platform exposes multiple accessories, each accessory
-     * can use the same sub type id.)
-     */
-
-    // Example: add two "motion sensor" services to the accessory
-    // const motionSensorOneService = this.accessory.getService('Motion Sensor One Name') ||
-    //   this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor One Name', 'YourUniqueIdentifier-1');
-
-    // const motionSensorTwoService = this.accessory.getService('Motion Sensor Two Name') ||
-    //   this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor Two Name', 'YourUniqueIdentifier-2');
-
-    /**
-     * Updating characteristics values asynchronously.
-     *
-     * Example showing how to update the state of a Characteristic asynchronously instead
-     * of using the `on('get')` handlers.
-     * Here we change update the motion sensor trigger states on and off every 10 seconds
-     * the `updateCharacteristic` method.
-     *
-     */
-    //   let motionDetected = false;
-    //   setInterval(() => {
-    //     // EXAMPLE - inverse the trigger
-    //     motionDetected = !motionDetected;
-
-    //     // push the new value to HomeKit
-    //     motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
-    //     motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
-
-  //     this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
-  //     this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
-  //   }, 10000);
   }
 
   /**
@@ -97,22 +53,22 @@ export class YeelightBulbPlatformAccessory {
    * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
    */
   async setOn(value: CharacteristicValue) {
-    this.platform.log.info('Set Characteristic On ->', value);
+    this.platform.log.info('Setting Yeelight Bulb to ' + value ? 'on' : 'off');
     // implement your own code to turn your device on/off
     const ip = this.accessory.context.device.location.split('//')[1].split(':')[0];
     const port = this.accessory.context.device.location.split('//')[1].split(':')[1];
     const payload = `{"id":1,"method":"set_power","params":["${value ? 'on' : 'off'}","smooth",500]}\r\n`;
     const client = new net.Socket();
     client.connect(port, ip, () => {
-      this.platform.log.debug('Connected to Yeelight Bulb');
+      this.platform.log.info('Connected to Yeelight Bulb');
       client.write(payload);
     });
     client.on('data', (data) => {
-      this.platform.log.debug('Received: ' + data);
+      this.platform.log.info('Received: ' + data);
       client.destroy(); // kill client after server's response
     });
     client.on('close', () => {
-      this.platform.log.debug('Connection closed');
+      this.platform.log.info('Connection closed');
     });
   }
 

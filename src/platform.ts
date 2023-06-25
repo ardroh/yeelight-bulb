@@ -92,7 +92,7 @@ export class YeelightBulbHomebridgePlatform implements DynamicPlatformPlugin {
     // Collection of devices of type Record<string, string>
     const devices: Record<string, string>[] = [];
     socket.on('message', (message, rinfo) => {
-      this.log.info(`Received ${message.length} bytes from ${rinfo.address}:${rinfo.port}`);
+      this.log.debug(`Received ${message.length} bytes from ${rinfo.address}:${rinfo.port}`);
       const parsedDevice = parseScript(message.toString());
       devices.push(parsedDevice);
     });
@@ -155,10 +155,10 @@ export class YeelightBulbHomebridgePlatform implements DynamicPlatformPlugin {
       }
     });
 
+    const port = 62142;
+    this.log.info('Plugin is listening for devices on port ', port);
     // Bind the socket to a specific port
-    socket.bind(62142);
-
-    this.log.info('Discovering devices...');
+    socket.bind(port);
 
     setTimeout(() => {
       socket.close();
