@@ -91,27 +91,31 @@ export class YeelightBulbPlatformAccessory {
     const port = this.accessory.context.device.location.split('//')[1].split(':')[1];
     const payload = '{"id":1,"method":"get_prop","params":["power"]}\x0D\x0A';
     //send tcp request to yeelight
-    const client = new net.Socket();
-    let isOn = false;
-    client.connect(port, ip, () => {
-      this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
-      client.write(payload);
+    const isOn = await new Promise<boolean>((resolve, reject) => {
+      let isOn = false;
+      const client = new net.Socket();
+      client.connect(port, ip, () => {
+        this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
+        client.write(payload);
+      });
+      //get response from yeelight
+      client.on('data', (data) => {
+        this.platform.log.info('Received: ' + data);
+        const response = JSON.parse(data.toString());
+        if (response.result) {
+          isOn = response.result[0] === 'on';
+        }
+        resolve(isOn);
+      });
+      //wait for response
+      setTimeout(() => {
+        reject();
+      }, 5000);
+      client.destroy(); // kill client after server's response
     });
-    //get response from yeelight
-    client.on('data', (data) => {
-      this.platform.log.info('Received: ' + data);
-      const response = JSON.parse(data.toString());
-      if (response.result) {
-        isOn = response.result[0] === 'on';
-      }
-    });
-    //wait for response
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    client.destroy(); // kill client after server's response
-
 
     return isOn;
   }
+
 
 }
