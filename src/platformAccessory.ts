@@ -29,7 +29,7 @@ export class YeelightBulbPlatformAccessory {
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Yeelight')
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.model)
-      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.id);
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.UUID);
 
     // get the LightBulb service if it exists, otherwise create a new LightBulb service
     // you can create multiple services for each accessory

@@ -94,6 +94,7 @@ export class YeelightBulbHomebridgePlatform implements DynamicPlatformPlugin {
     socket.on('message', (message, rinfo) => {
       this.log.debug(`Received ${message.length} bytes from ${rinfo.address}:${rinfo.port}`);
       const parsedDevice = parseScript(message.toString());
+      this.log.info('Discovered device:', parsedDevice);
       devices.push(parsedDevice);
     });
 
@@ -113,18 +114,20 @@ export class YeelightBulbHomebridgePlatform implements DynamicPlatformPlugin {
         // something globally unique, but constant, for example, the device serial
         // number or MAC address
         const uuid = this.api.hap.uuid.generate(device.id);
+        this.log.info('Generated UUID:', uuid);
 
         // see if an accessory with the same uuid has already been registered and restored from
         // the cached devices we stored in the `configureAccessory` method above
         const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+        this.log.info('Existing accessory:', this.accessories);
 
         if (existingAccessory) {
           // the accessory already exists
           this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
           // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
-          // existingAccessory.context.device = device;
-          // this.api.updatePlatformAccessories([existingAccessory]);
+          existingAccessory.context.device = device;
+          this.api.updatePlatformAccessories([existingAccessory]);
 
           // create the accessory handler for the restored accessory
           // this is imported from `platformAccessory.ts`
@@ -139,7 +142,7 @@ export class YeelightBulbHomebridgePlatform implements DynamicPlatformPlugin {
           this.log.info('Adding new accessory:', device.id);
 
           // create a new accessory
-          const accessory = new this.api.platformAccessory(device.model, uuid);
+          const accessory = new this.api.platformAccessory('Yeelight Bulb', uuid);
 
           // store a copy of the device object in the `accessory.context`
           // the `context` property can be used to store any data about the accessory you may need
