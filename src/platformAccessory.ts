@@ -70,6 +70,11 @@ export class YeelightBulbPlatformAccessory {
     client.on('close', () => {
       this.platform.log.info('Connection closed');
     });
+    setTimeout(() => {
+      if (!client.destroyed){
+        client.destroy();
+      }
+    }, 5000);
   }
 
   /**
