@@ -53,36 +53,47 @@ export class YeelightBulbPlatformAccessory {
    * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
    */
   async setOn(value: CharacteristicValue) {
-    this.platform.log.info('Setting Yeelight Bulb to ' + value ? 'on' : 'off');
-    // implement your own code to turn your device on/off
-    const ip = this.accessory.context.device.location.split('//')[1].split(':')[0];
-    const port = this.accessory.context.device.location.split('//')[1].split(':')[1];
-    const payload = `{"id":1,"method":"set_power","params":["${value ? 'on' : 'off'}","smooth",500]}\r\n`;
-    await new Promise((resolve, reject) => {
-      const client = new net.Socket();
-      client.connect(port, ip, () => {
-        this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
-        client.write(payload);
-      });
-      client.on('data', (data) => {
-        this.platform.log.info('Set status - Received: ' + data);
-        client.destroy(); // kill client after server's response
-        resolve('success');
-      });
-      client.on('error', (err) => {
-        this.platform.log.info('Set status - error: ' + err);
-        reject(err);
-      });
-      client.on('close', () => {
-        this.platform.log.info('Set status - connection closed');
-      });
-      setTimeout(() => {
-        if (!client.destroyed) {
+    try {
+      this.platform.log.info('Setting Yeelight Bulb to ' + (value ? 'on' : 'off'));
+      if (!this.accessory.context.device.location) {
+        throw new Error("Location is not provided");
+      }
+
+      const [ip, port] = this.accessory.context.device.location.split('//')[1].split(':');
+      const payload = `{"id":1,"method":"set_power","params":["${value ? 'on' : 'off'}","smooth",500]}\r\n`;
+      const result = await new Promise<string>((resolve, reject) => {
+        let hasData = false;
+        const client = new net.Socket();
+        client.connect(port, ip, () => {
+          this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
+          client.write(payload);
+        });
+        client.on('data', (data) => {
+          this.platform.log.info('Set status - Received: ' + data);
           client.destroy();
-        }
-        resolve('timeout');
-      }, 5000);
-    });
+          hasData = true;
+          resolve('success');
+        });
+        client.on('error', (err) => {
+          this.platform.log.info('Set status - error: ' + err);
+          client.destroy();
+          reject(err);
+        });
+        client.on('close', () => {
+          this.platform.log.info('Set status - connection closed');
+        });
+        setTimeout(() => {
+          if (!hasData) {
+            client.destroy();
+            reject(new Error('Response Timeout'));
+          }
+        }, 5000);
+      });
+      return result;
+    } catch (error) {
+      this.platform.log.error('Error setting Yeelight Bulb state: ' + error);
+      throw error;
+    }
   }
 
   /**
@@ -99,14 +110,18 @@ export class YeelightBulbPlatformAccessory {
    * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
    */
   async getOn(): Promise<CharacteristicValue> {
-    //split ip, port from accessory.context.device.location yeelight://192.168.50.219:55443
-    const ip = this.accessory.context.device.location.split('//')[1].split(':')[0];
-    const port = this.accessory.context.device.location.split('//')[1].split(':')[1];
-    const payload = '{"id":1,"method":"get_prop","params":["power"]}\x0D\x0A';
-    //send tcp request to yeelight
     try {
+      //split ip, port from accessory.context.device.location yeelight://192.168.50.219:55443
+      if (!this.accessory.context.device.location) {
+        throw new Error("Location is not provided");
+      }
+
+      const [ip, port] = this.accessory.context.device.location.split('//')[1].split(':');
+      const payload = '{"id":1,"method":"get_prop","params":["power"]}\x0D\x0A';
+      //send tcp request to yeelight
+
       const isOn = await new Promise<boolean>((resolve, reject) => {
-        let isOn = false;
+        let hasData = false;
         const client = new net.Socket();
         client.connect(port, ip, () => {
           this.platform.log.info('Connected to Yeelight Bulb, sending payload: ' + payload);
@@ -116,15 +131,18 @@ export class YeelightBulbPlatformAccessory {
         client.on('data', (data) => {
           this.platform.log.info('Check Status - Received: ' + data);
           const response = JSON.parse(data.toString());
+          let isOn = false;
           if (response.result) {
             isOn = response.result[0] === 'on';
           }
+          this.platform.log.info('Yeelight Bulb is ' + (isOn ? 'on' : 'off'));
+          client.destroy();
+          hasData = true;
           resolve(isOn);
-          this.platform.log.info('Yeelight Bulb is ' + isOn ? 'on' : 'off');
-          client.destroy(); // kill client after server's response
         });
         client.on('error', (err) => {
           this.platform.log.info('Check status - error: ' + err);
+          client.destroy();
           reject(err);
         });
         client.on('close', () => {
@@ -132,19 +150,20 @@ export class YeelightBulbPlatformAccessory {
         });
         //wait for response
         setTimeout(() => {
-          if (!client.destroyed) {
+          if (!hasData) {
             client.destroy();
+            reject(new Error('Response Timeout'));
           }
-          resolve(isOn);
         }, 5000);
       });
+
       return isOn;
     } catch (error) {
       this.platform.log.error('Error getting Yeelight Bulb state: ' + error);
+      throw error; // You may want to throw the error so it can be handled by the calling function
     }
-
-    return false;
   }
+}
 
 
 }
